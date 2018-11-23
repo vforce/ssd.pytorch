@@ -9,8 +9,8 @@ import cv2
 import numpy as np
 
 COCO_ROOT = osp.join(HOME, 'data/coco/')
-IMAGES = 'images'
-ANNOTATIONS = 'annotations'
+IMAGES = osp.join(COCO_ROOT, 'images')
+ANNOTATIONS = osp.join(COCO_ROOT, 'annotations')
 COCO_API = 'PythonAPI'
 INSTANCES_SET = 'instances_{}.json'
 COCO_CLASSES = ('person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
