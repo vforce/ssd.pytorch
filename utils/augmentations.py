@@ -65,6 +65,9 @@ class Lambda(object):
 
 
 class ConvertFromInts(object):
+    """
+    Change data type from uint to float
+    """
     def __call__(self, image, boxes=None, labels=None):
         return image.astype(np.float32), boxes, labels
 
@@ -91,12 +94,15 @@ class ToAbsoluteCoords(object):
 
 
 class ToPercentCoords(object):
+    """
+    Scale coordinates to range 0-1 relative to width and height of the image
+    """
     def __call__(self, image, boxes=None, labels=None):
         height, width, channels = image.shape
-        boxes[:, 0] /= width
-        boxes[:, 2] /= width
-        boxes[:, 1] /= height
-        boxes[:, 3] /= height
+        boxes[:, 0] = boxes[:, 0] / width
+        boxes[:, 2] = boxes[:, 2] / width
+        boxes[:, 1] = boxes[:, 1] / height
+        boxes[:, 3] = boxes[:, 3] / height
 
         return image, boxes, labels
 
