@@ -1,9 +1,8 @@
-# from data import *
-import data as dat
-from data import config
+# # from data import *
+# import data as dat
+# from data import config
 from utils.augmentations import SSDAugmentation
-from layers.modules import MultiBoxLoss
-from ssd import build_ssd
+# from ssd import build_ssd
 import os
 import sys
 import time
@@ -41,7 +40,7 @@ parser.add_argument('--num_workers', default=4, type=int,
                     help='Number of workers used in dataloading')
 parser.add_argument('--cuda', default=True, type=str2bool,
                     help='Use CUDA to train model')
-parser.add_argument('--lr', '--learning-rate', default=1e-5, type=float,
+parser.add_argument('--lr', '--learning-rate', default=1e-6, type=float,
                     help='initial learning rate')
 parser.add_argument('--momentum', default=0.9, type=float,
                     help='Momentum value for optim')
@@ -54,7 +53,6 @@ parser.add_argument('--visdom', default=False, type=str2bool,
 parser.add_argument('--save_folder', default='weights/',
                     help='Directory for saving checkpoint models')
 args = parser.parse_args()
-
 
 if torch.cuda.is_available():
     if args.cuda:
@@ -73,6 +71,7 @@ if not os.path.exists(args.save_folder):
 def train():
     if args.dataset == 'COCO':
         from data import coco
+        from data import config
         if args.dataset_root == coco.COCO_ROOT:
             if not os.path.exists(coco.COCO_ROOT):
                 parser.error('Must specify dataset_root if specifying dataset')
@@ -87,7 +86,8 @@ def train():
         from data import voc0712 as voc
         # if args.dataset_root == voc.VOC_ROOT:
         #     parser.error('Must specify dataset if specifying dataset_root')
-        args.dataset_root = voc.VOC_ROOT
+        # args.dataset_root = voc.VOC_ROOT
+        from data import config
         cfg = config.voc
         dataset = voc.VOCDetection(root=args.dataset_root,
                                transform=SSDAugmentation(cfg['min_dim'],
@@ -96,7 +96,7 @@ def train():
     if args.visdom:
         import visdom
         viz = visdom.Visdom()
-
+    from ssd import build_ssd
     ssd_net = build_ssd('train', cfg['min_dim'], cfg['num_classes'])
     net = ssd_net
 
@@ -124,6 +124,7 @@ def train():
 
     optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum,
                           weight_decay=args.weight_decay)
+    from layers.modules import MultiBoxLoss
     criterion = MultiBoxLoss(cfg['num_classes'], 0.5, True, 0, True, 3, 0.5,
                              False, args.cuda)
 
@@ -146,7 +147,7 @@ def train():
         vis_legend = ['Loc Loss', 'Conf Loss', 'Total Loss']
         iter_plot = create_vis_plot('Iteration', 'Loss', vis_title, vis_legend)
         epoch_plot = create_vis_plot('Epoch', 'Loss', vis_title, vis_legend)
-
+    import data as dat
     data_loader = data.DataLoader(dataset, args.batch_size,
                                   num_workers=args.num_workers,
                                   shuffle=True, collate_fn=dat.detection_collate,
@@ -185,18 +186,20 @@ def train():
         loss.backward()
         optimizer.step()
         t1 = time.time()
-        loc_loss += loss_l.data[0]
-        conf_loss += loss_c.data[0]
+        # loc_loss += loss_l.data[0]
+        loc_loss += loss_l.item()
+        # conf_loss += loss_c.data[0]
+        conf_loss += loss_c.item()
 
         if iteration % 10 == 0:
             print('timer: %.4f sec.' % (t1 - t0))
-            print('iter ' + repr(iteration) + ' || Loss: %.4f ||' % (loss.data[0]), end=' ')
+            print('iter ' + repr(iteration) + ' || Loss: %.4f ||' % (loss.item()), end=' ')
 
         if args.visdom:
             update_vis_plot(iteration, loss_l.data[0], loss_c.data[0],
                             iter_plot, epoch_plot, 'append')
 
-        if iteration != 0 and iteration % 5000 == 0:
+        if iteration != 0 and iteration % 2000 == 0:
             print('Saving state, iter:', iteration)
             torch.save(ssd_net.state_dict(), 'weights/ssd300_COCO_' +
                        repr(iteration) + '.pth')
@@ -216,7 +219,8 @@ def adjust_learning_rate(optimizer, gamma, step):
 
 
 def xavier(param):
-    init.xavier_uniform(param)
+    # init.xavier_uniform(param)
+    init.xavier_uniform_(param)
 
 
 def weights_init(m):

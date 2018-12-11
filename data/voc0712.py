@@ -108,6 +108,10 @@ class VOCDetection(data.Dataset):
         self.ids = list()
         for (year, name) in image_sets:
             rootpath = osp.join(self.root, 'VOC' + year)
+            if not osp.exists(rootpath):
+                print("{} does not exist, continue...".format(rootpath))
+                continue
+            print("root path = {}".format(rootpath))
             for line in open(osp.join(rootpath, 'ImageSets', 'Main', name + '.txt')):
                 self.ids.append((rootpath, line.strip()))
 

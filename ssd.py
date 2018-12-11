@@ -4,8 +4,6 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 from layers import *
 from data import config
-from data import coco
-from data import voc0712 as voc
 import os
 
 
